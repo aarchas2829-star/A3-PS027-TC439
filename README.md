@@ -10,7 +10,7 @@ Repository for the AIORI-3 Hackathon: IPv6 Website and Dependency Readiness Audi
 Saintgits College of Engineering
 
 ## Links
-- Team intro video: https://youtu.be/YOUR-VIDEO-LINK
+- Team intro video: https://youtu.be/g4H8tSMngTg?si=qJ01ISmwR_wGMMY7
 - Presentation: A3-PS027-TC439-Presentation-3.pdf
 
 ## About the project
