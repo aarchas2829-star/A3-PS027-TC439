@@ -1,17 +1,3 @@
-// ─── Mock Data (swap with real API call later) ─────────────────────────────
-const mockData = {
-  site: "example.com",
-  score: 62,
-  dns_ipv6: true,
-  reachable_ipv6: true,
-  dependencies: [
-    { host: "cdn.example.net", ipv6: true },
-    { host: "fonts.example.org", ipv6: false },
-    { host: "analytics.example.com", ipv6: false },
-    { host: "images.example.io", ipv6: true },
-  ],
-};
-
 // ─── Chart instance (so we can destroy & recreate) ──────────────────────────
 let depsChart = null;
 
@@ -28,23 +14,50 @@ async function handleScan() {
   btn.disabled = true;
   btn.textContent = "Scanning…";
 
-  // ────────────────────────────────────────────────────────────────────────
-  // TODO: Replace the mockData usage below with a real fetch call:
-  //
-  //   const res  = await fetch(`http://localhost:8000/scan?url=${encodeURIComponent(url)}`);
-  //   const data = await res.json();
-  //
-  // Then pass `data` to renderResults(data) instead of mockData.
-  // ────────────────────────────────────────────────────────────────────────
+  // Hide any previous error
+  hideError();
 
-  // Simulate a short network delay for realism
-  await new Promise((resolve) => setTimeout(resolve, 600));
+  try {
+    const res = await fetch(
+      `http://localhost:8000/scan?url=${encodeURIComponent(url)}`
+    );
+    if (!res.ok) {
+      throw new Error(`Server responded with status ${res.status}`);
+    }
+    const data = await res.json();
+    renderResults(data);
+  } catch (err) {
+    console.error("Scan failed:", err);
+    showError("Could not reach the backend. Is it running on port 8000?");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Scan";
+  }
+}
 
-  const data = { ...mockData, site: url };
-  renderResults(data);
+// ─── Error display helpers ───────────────────────────────────────────────────
+function showError(message) {
+  let el = document.getElementById("errorMsg");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "errorMsg";
+    el.style.cssText =
+      "background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5;" +
+      "border-radius:8px;padding:12px 16px;margin:16px auto;max-width:600px;" +
+      "text-align:center;font-weight:500;";
+    const searchSection = document.querySelector(".search-section");
+    searchSection.insertAdjacentElement("afterend", el);
+  }
+  el.textContent = message;
+  el.style.display = "block";
 
-  btn.disabled = false;
-  btn.textContent = "Scan";
+  // Also hide the results section so stale data isn't shown alongside an error
+  document.getElementById("results").classList.add("hidden");
+}
+
+function hideError() {
+  const el = document.getElementById("errorMsg");
+  if (el) el.style.display = "none";
 }
 
 // ─── Render everything ──────────────────────────────────────────────────────
@@ -120,6 +133,15 @@ function renderDepsTable(deps) {
   const tbody = document.getElementById("depsBody");
   tbody.innerHTML = "";
 
+  if (!deps || deps.length === 0) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="2" style="text-align:center;color:#6b7280;font-style:italic;">
+      No third-party dependencies found
+    </td>`;
+    tbody.appendChild(tr);
+    return;
+  }
+
   deps.forEach((dep) => {
     const tr = document.createElement("tr");
     const badgeClass = dep.ipv6 ? "ok" : "fail";
@@ -135,15 +157,35 @@ function renderDepsTable(deps) {
 
 // ─── Chart ───────────────────────────────────────────────────────────────────
 function renderChart(deps) {
-  const ipv6Count = deps.filter((d) => d.ipv6).length;
-  const ipv4Count = deps.length - ipv6Count;
-
   // Destroy the old chart if it exists
   if (depsChart) {
     depsChart.destroy();
+    depsChart = null;
   }
 
-  const ctx = document.getElementById("depsChart").getContext("2d");
+  const canvas = document.getElementById("depsChart");
+  const ctx = canvas.getContext("2d");
+
+  // Handle empty dependencies – show a message instead of a broken chart
+  if (!deps || deps.length === 0) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.fillStyle = "#6b7280";
+    ctx.font = "14px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(
+      "No dependencies to chart",
+      canvas.width / 2,
+      canvas.height / 2
+    );
+    ctx.restore();
+    return;
+  }
+
+  const ipv6Count = deps.filter((d) => d.ipv6).length;
+  const ipv4Count = deps.length - ipv6Count;
+
   depsChart = new Chart(ctx, {
     type: "doughnut",
     data: {
