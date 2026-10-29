@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IPv6 Readiness Auditor</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <h1>🌐 IPv6 Readiness Auditor</h1>
+      <p class="subtitle">Check if your website and its dependencies are ready for IPv6</p>
+    </header>
+
+    <!-- Search Section -->
+    <section class="search-section">
+      <div class="search-box">
+        <input
+          type="text"
+          id="urlInput"
+          placeholder="Enter a website, e.g. example.com"
+          autocomplete="off"
+        />
+        <button id="scanBtn" onclick="handleScan()">Scan</button>
+      </div>
+    </section>
+
+    <!-- Results (hidden until scan) -->
+    <section id="results" class="results hidden">
+
+      <!-- Score -->
+      <div class="score-section">
+        <div id="scoreCircle" class="score-circle">
+          <span id="scoreValue" class="score-value">0</span>
+          <span class="score-label">/ 100</span>
+        </div>
+        <p id="scoreText" class="score-text">Readiness Score</p>
+      </div>
+
+      <!-- Status Cards -->
+      <div class="status-cards">
+        <div class="card" id="dnsCard">
+          <div class="card-icon" id="dnsIcon">—</div>
+          <h3>DNS IPv6 (AAAA Record)</h3>
+          <p id="dnsStatus" class="card-status">—</p>
+        </div>
+        <div class="card" id="reachCard">
+          <div class="card-icon" id="reachIcon">—</div>
+          <h3>IPv6 Reachable</h3>
+          <p id="reachStatus" class="card-status">—</p>
+        </div>
+      </div>
+
+      <!-- Dependencies Table -->
+      <div class="deps-section">
+        <h2>Dependencies</h2>
+        <div class="table-wrap">
+          <table id="depsTable">
+            <thead>
+              <tr>
+                <th>Host</th>
+                <th>IPv6 Status</th>
+              </tr>
+            </thead>
+            <tbody id="depsBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Chart -->
+      <div class="chart-section">
+        <h2>IPv6 Support Breakdown</h2>
+        <div class="chart-container">
+          <canvas id="depsChart"></canvas>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
