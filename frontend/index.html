@@ -3,82 +3,187 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>IPv6 Readiness Auditor</title>
+  <title>IPv6 Website and Dependency Readiness Auditor</title>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
 </head>
 <body>
-  <div class="container">
-    <!-- Header -->
-    <header class="header">
-      <h1>🌐 IPv6 Readiness Auditor</h1>
-      <p class="subtitle">Check if your website and its dependencies are ready for IPv6</p>
-    </header>
+  <!-- Full-width Hero Header -->
+  <header class="hero-header">
+    <div class="hero-container">
+      <div class="top-nav">
+        <div class="badge-tag">
+          <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
+            <path d="M2 12h20"></path>
+          </svg>
+          <span>NETWORK AUDITOR</span>
+        </div>
+        <button id="themeToggle" class="theme-toggle" aria-label="Toggle dark mode" title="Toggle dark / light mode">
+          <span class="theme-icon" id="themeIcon"></span>
+        </button>
+      </div>
 
-    <!-- Search Section -->
-    <section class="search-section">
-      <div class="search-box">
-        <input
-          type="text"
-          id="urlInput"
-          placeholder="Enter a website, e.g. example.com"
-          autocomplete="off"
-        />
-        <button id="scanBtn" onclick="handleScan()">Scan</button>
+      <div class="hero-content">
+        <h1 class="hero-title">IPv6 Website and Dependency Readiness Auditor</h1>
+        <p class="hero-subtitle">Check whether a website and everything it loads works over IPv6.</p>
+      </div>
+
+      <!-- Search Section inside Header -->
+      <section class="search-section">
+        <div class="search-box">
+          <div class="search-icon-slot">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </div>
+          <input
+            type="text"
+            id="urlInput"
+            placeholder="Enter website hostname or URL, e.g. example.com"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button id="scanBtn" onclick="handleScan()">
+            <span id="scanBtnText">Scan</span>
+          </button>
+        </div>
+      </section>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="dashboard-container">
+    <!-- Centered Loading Spinner -->
+    <div id="loadingState" class="state-card loading-card hidden" aria-live="polite">
+      <div class="spinner-ring"></div>
+      <p class="state-title">Auditing Host and Dependencies…</p>
+      <p class="state-desc">Querying AAAA DNS records and probing IPv6 network reachability</p>
+    </div>
+
+    <!-- Friendly Error Box -->
+    <div id="errorMsg" class="error-card hidden" role="alert">
+      <div class="error-icon-box">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+      </div>
+      <div class="error-body">
+        <h3 class="error-title">Audit Request Failed</h3>
+        <p id="errorText" class="error-desc">Could not reach the backend. Is it running on port 8000?</p>
+      </div>
+    </div>
+
+    <!-- Results Dashboard (hidden until scan) -->
+    <section id="results" class="results-dashboard hidden">
+      <!-- Overview Grid: Score Card + 2 Status Cards -->
+      <div class="overview-grid">
+        <!-- Score Card with SVG Circular Progress Ring -->
+        <div class="dashboard-card score-card">
+          <span class="card-eyebrow">READINESS SCORE</span>
+          <div class="score-ring-wrapper">
+            <svg class="score-ring-svg" viewBox="0 0 140 140" width="140" height="140">
+              <circle class="score-ring-track" cx="70" cy="70" r="56" />
+              <circle id="scoreProgress" class="score-ring-fill" cx="70" cy="70" r="56" />
+            </svg>
+            <div id="scoreCircle" class="score-ring-content">
+              <span id="scoreValue" class="score-value">0</span>
+              <span class="score-label">/ 100</span>
+            </div>
+          </div>
+          <div class="score-meta">
+            <span id="scoreBadge" class="score-pill">—</span>
+            <p id="scoreText" class="score-caption">Readiness Score</p>
+          </div>
+        </div>
+
+        <!-- Status Card 1: DNS IPv6 -->
+        <div class="dashboard-card status-card" id="dnsCard">
+          <div class="status-card-top">
+            <div class="status-icon" id="dnsIcon"></div>
+            <span id="dnsPill" class="status-badge">—</span>
+          </div>
+          <div class="status-card-body">
+            <h3 class="status-heading">DNS IPv6 (AAAA)</h3>
+            <p id="dnsStatus" class="card-status hidden">—</p>
+            <p id="dnsDesc" class="status-desc">Resolves to a valid IPv6 address via DNS AAAA record</p>
+          </div>
+        </div>
+
+        <!-- Status Card 2: IPv6 Reachable -->
+        <div class="dashboard-card status-card" id="reachCard">
+          <div class="status-card-top">
+            <div class="status-icon" id="reachIcon"></div>
+            <span id="reachPill" class="status-badge">—</span>
+          </div>
+          <div class="status-card-body">
+            <h3 class="status-heading">IPv6 Reachable</h3>
+            <p id="reachStatus" class="card-status hidden">—</p>
+            <p id="reachDesc" class="status-desc">Direct network connection established over IPv6</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Two-column Section: Dependencies Table + Doughnut Chart -->
+      <div class="details-grid">
+        <!-- Dependency Table Card -->
+        <div class="dashboard-card table-card">
+          <div class="card-header">
+            <div>
+              <h2 class="section-title">Dependencies</h2>
+              <p id="depsSummary" class="section-summary">Third-party resources and host readiness</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table id="depsTable">
+              <thead>
+                <tr>
+                  <th>Host</th>
+                  <th>IPv6 Status</th>
+                </tr>
+              </thead>
+              <tbody id="depsBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Chart Card -->
+        <div class="dashboard-card chart-card">
+          <div class="card-header">
+            <div>
+              <h2 class="section-title">IPv6 Support Breakdown</h2>
+              <p class="section-summary">Ratio of ready vs. IPv4-only dependencies</p>
+            </div>
+          </div>
+          <div class="chart-box">
+            <div class="chart-container">
+              <canvas id="depsChart"></canvas>
+              <div id="chartCenter" class="chart-center-overlay">
+                <span id="chartCenterPercent" class="chart-center-val">0%</span>
+                <span class="chart-center-sub">IPV6 READY</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
+  </main>
 
-    <!-- Results (hidden until scan) -->
-    <section id="results" class="results hidden">
-
-      <!-- Score -->
-      <div class="score-section">
-        <div id="scoreCircle" class="score-circle">
-          <span id="scoreValue" class="score-value">0</span>
-          <span class="score-label">/ 100</span>
-        </div>
-        <p id="scoreText" class="score-text">Readiness Score</p>
-      </div>
-
-      <!-- Status Cards -->
-      <div class="status-cards">
-        <div class="card" id="dnsCard">
-          <div class="card-icon" id="dnsIcon">—</div>
-          <h3>DNS IPv6 (AAAA Record)</h3>
-          <p id="dnsStatus" class="card-status">—</p>
-        </div>
-        <div class="card" id="reachCard">
-          <div class="card-icon" id="reachIcon">—</div>
-          <h3>IPv6 Reachable</h3>
-          <p id="reachStatus" class="card-status">—</p>
-        </div>
-      </div>
-
-      <!-- Dependencies Table -->
-      <div class="deps-section">
-        <h2>Dependencies</h2>
-        <div class="table-wrap">
-          <table id="depsTable">
-            <thead>
-              <tr>
-                <th>Host</th>
-                <th>IPv6 Status</th>
-              </tr>
-            </thead>
-            <tbody id="depsBody"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Chart -->
-      <div class="chart-section">
-        <h2>IPv6 Support Breakdown</h2>
-        <div class="chart-container">
-          <canvas id="depsChart"></canvas>
-        </div>
-      </div>
-    </section>
-  </div>
+  <!-- Slim Centered Footer -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <p class="footer-primary">Team SYNEXIS | A3-PS027-TC439 | AIORI Hackathon 3 | Saintgits College of Engineering</p>
+      <p class="footer-note">Scores are estimates based on DNS and connection checks.</p>
+    </div>
+  </footer>
 
   <script src="script.js"></script>
 </body>
