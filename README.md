@@ -12,6 +12,8 @@ Saintgits College of Engineering
 ## Links
 - Team intro video: https://youtu.be/g4H8tSMngTg?si=qJ01ISmwR_wGMMY7
 - Presentation: A3-PS027-TC439-Presentation-3.pdf
+- ## Demo Video
+Watch the demo here: https://youtu.be/ygVN1avFAt8?si=lOibdOEpnqvxnzsE
 
 ## About the project
 An automated auditor that scans a website and its full dependency tree, tests real IPv6 reachability, and reports a readiness score with a prioritised fix list.
